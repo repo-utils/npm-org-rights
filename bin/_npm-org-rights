@@ -10,7 +10,7 @@ program._name = 'npm-org-rights'
 program
 .version(require('../package.json').version)
 .usage('<organization> <user>')
-.option('-c, --concurrency [number]', 'Concurrent limit [1]', 5, function (val) {
+.option('-c, --concurrency [number]', 'Concurrent limit [5]', 5, function (val) {
   return val | 0 || 1
 })
 .parse(process.argv)
