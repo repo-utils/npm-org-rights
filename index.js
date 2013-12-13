@@ -17,7 +17,7 @@ function* execute(org, user, options) {
 
   var repos = yield* getRepos(org)
   if (!repos.length)
-    return
+    return console.log('no repos to check')
 
   options = options || {}
   options.concurrency = options.concurrency || 1
