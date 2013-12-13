@@ -1,7 +1,7 @@
 {
   "name": "npm-org-rights",
   "description": "Give somebody your npm publishing rights to all repos in a github org",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "author": {
     "name": "Jonathan Ong",
     "email": "me@jongleberry.com",
@@ -18,14 +18,16 @@
     "url": "https://github.com/jonathanong/npm-org-rights/issues"
   },
   "dependencies": {
-    "co": "*",
-    "commander": "*",
-    "get-json-plz": "*"
-  },
-  "devDependencies": {
-    "co": "*"
+    "co": "~2.3.0",
+    "archan": "~0.4.0",
+    "commander": "~2.1.0",
+    "get-json-plz": "~0.0.2"
   },
   "engines": {
     "node": ">= 0.11.3"
-  }
+  },
+  "bin": {
+    "npm-org-rights": "./bin/npm-org-rights"
+  },
+  "preferGlobal": true
 }

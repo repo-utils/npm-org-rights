@@ -6,22 +6,18 @@ A love letter to @visionmedia.
 ## Usage
 
 Requires node v0.11 because it's written in [co](https://github.com/visionmedia/co).
-Also not written as a binary because I don't know how to do `node --harmony` in a binary.
 
 ```bash
 nvm use 0.11
-
-git clone git://github.com/jonathanong/npm-org-rights
-cd npm-org-rights
-node --harmony . [org] [user]
+npm i -g npm-org-rights
 ```
 
 For example, @visionmedia should do:
 
 ```bash
-node --harmony . component tootallnate
-node --harmony . component jongleberry
-node --harmony . koajs jongleberry
+npm-org-rights component tootallnate
+npm-org-rights component jongleberry
+npm-org-rights koajs jongleberry
 ```
 
 and the list goes on.

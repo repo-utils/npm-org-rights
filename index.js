@@ -1,49 +1,40 @@
 var co = require('co')
-var get = require('get-json-plz')
 var cp = require('child_process')
+var get = require('get-json-plz')
+var archan = require('archan')
 
 module.exports = execute
 
-if (!module.parent) {
-  // i don't know how to do --harmony in a binary
-  var org = process.argv[2]
-  var user = process.argv[3]
-  if (!org || !user)
-    throw new Error('uhhh need org and user')
-  console.log('organization set as: ' + org)
-  console.log('user set as: ' + user)
-  co(execute(org, user))(function (err) {
-    if (err)
-      throw err
+function* execute(org, user, options) {
+  console.log('organization: ' + org)
+  console.log('user: ' + user)
 
-    process.exit()
-  })
-}
-
-function* execute(org, user) {
   var me = yield exec('npm', ['whoami'])
   if (!me)
     throw new Error('log in to npm, man!')
 
-  console.log('i am: ' + me)
+  console.log('me: ' + me)
 
   var repos = yield* getRepos(org)
   if (!repos.length)
     return
 
+  options = options || {}
+  options.concurrency = options.concurrency || 1
+  var ch = archan(options)
+
   for (var i = 0; i < repos.length; i++) {
-    var repo = repos[i]
-    var name = yield* getPackageName(org, repo.name)
-
-    if (!name)
-      continue
-
-    console.log('attempting package: ' + name)
-
-    yield* addOwner(name, me, user)
+    yield* ch.drain()
+    co(function* () {
+      var repo = repos[i]
+      var name = yield* getPackageName(org, repo.name)
+      if (name)
+        yield* addOwner(name, me, user)
+    })(ch.push())
   }
 
-  console.log('you successfully shared your developer life blood to another')
+  yield* ch.flush()
+  console.log('you have successfully shared your developer life blood with another')
 }
 
 function* getRepos(org) {
@@ -53,7 +44,7 @@ function* getRepos(org) {
 function* getPackageName(org, repo) {
   var json
   try {
-    var json = yield get('https://raw.github.com/' + org + '/' + repo + '/master/package.json')
+    json = yield get('https://raw.github.com/' + org + '/' + repo + '/master/package.json')
   } catch (err) {}
   // no package.json
   if (!json)
@@ -66,7 +57,7 @@ function* getPackageName(org, repo) {
 function* addOwner(name, me, user) {
   var owners
   try {
-    var owners = yield exec('npm', ['owner', 'ls', name])
+    owners = yield exec('npm', ['owner', 'ls', name])
   } catch (err) {
     console.log('repo "' + name + '" isnt published on npm')
     return
@@ -76,10 +67,10 @@ function* addOwner(name, me, user) {
     return console.log('you dont have publishing rights to "' + name + '"')
   // this particular individual already has rights!
   if (~owners.indexOf(user))
-    return console.log('user already has the rights to "' + name + '"')
+    return console.log(user + ' already has the rights to "' + name + '"')
   try {
     yield exec('npm', ['owner', 'add', user, name])
-    console.log('user added as owner to "' + name + '"')
+    console.log(user + ' added as owner to "' + name + '"')
   } catch (err) {
     console.error(err)
     // who knows why this would happen
