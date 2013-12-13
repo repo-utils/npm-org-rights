@@ -1,7 +1,7 @@
 {
   "name": "npm-org-rights",
   "description": "Give somebody your npm publishing rights to all repos in a github org",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "author": {
     "name": "Jonathan Ong",
     "email": "me@jongleberry.com",
