@@ -5,6 +5,8 @@ var co = require('co')
 
 var e = require('..')
 
+program._name = 'npm-org-rights'
+
 program
 .version(require('../package.json').version)
 .usage('<organization> <user>')
