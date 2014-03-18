@@ -18,13 +18,15 @@
     "url": "https://github.com/jonathanong/npm-org-rights/issues"
   },
   "dependencies": {
-    "co": "~2.3.0",
-    "archan": "~0.4.0",
-    "commander": "~2.1.0",
-    "get-json-plz": "~0.0.2"
+    "co": "^3.0.5",
+    "chanel": "^2.0.2",
+    "cogent": "~0.3.14",
+    "commander": "^2.1.0",
+    "parse-link-header": "~0.1.0",
+    "yield-ratelimit-reset": "^1.0.0"
   },
   "engines": {
-    "node": ">= 0.11.3"
+    "node": ">= 0.11.12"
   },
   "bin": {
     "npm-org-rights": "./bin/npm-org-rights"

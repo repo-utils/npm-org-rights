@@ -1,79 +1,116 @@
 var co = require('co')
+var request = require('cogent')
+var channel = require('chanel')
 var cp = require('child_process')
-var get = require('get-json-plz')
-var archan = require('archan')
+var reset = require('yield-ratelimit-reset')
+var parseLink = require('parse-link-header')
+
+var GITHUB_USERNAME = process.env.GITHUB_USERNAME
+var GITHUB_PASSWORD = process.env.GITHUB_PASSWORD
+if (GITHUB_PASSWORD && GITHUB_USERNAME) {
+  request = request.extend({
+    auth: GITHUB_USERNAME + ':' + GITHUB_PASSWORD,
+  })
+}
 
 module.exports = execute
 
 function* execute(org, user, options) {
+  var state = {}
+  process.on('uncaughtException', onError)
   console.log('organization: ' + org)
   console.log('user: ' + user)
 
   var me = yield exec('npm', ['whoami'])
-  if (!me)
-    throw new Error('log in to npm, man!')
+  if (!me) throw new Error('log in to npm, man!')
 
   console.log('me: ' + me)
 
-  var repos = yield* getRepos(org)
-  if (!repos.length)
-    return console.log('no repos to check')
+  var page = 1;
+  var ch = channel({
+    concurrency: 5,
+    discard: true,
+  })
 
-  options = options || {}
-  options.concurrency = options.concurrency || 1
-  var ch = archan(options)
+  while (true) {
+    console.log('searching page %s of repositories', page)
+    var res = yield* request('https://api.github.com/search/repositories?q=fork:true+user:' + org + '&page=' + page, true)
+    if (res.statusCode !== 200) throw new Error('error searching user\'s repos: ' + JSON.stringify(res.headers))
 
-  for (var i = 0; i < repos.length; i++) {
-    yield* ch.drain()
-    co(function* () {
-      var repo = repos[i]
-      var name = yield* getPackageName(org, repo.name)
-      if (name)
-        yield* addOwner(name, me, user)
-    })(ch.push())
+    var items = res.body.items
+    for (var i = 0; i < items.length; i++) {
+      ch.push(co(add(items[i])))
+    }
+
+    yield* reset(res.headers)
+
+    if (!res.headers.link) break
+    var links = parseLink(res.headers.link)
+    if (!links.next) break
+
+    page++
   }
 
-  yield* ch.flush()
+  console.log('done searching for repositories')
+
+  yield ch(true)
+
   console.log('you have successfully shared your developer life blood with another')
-}
 
-function* getRepos(org) {
-  return yield get('https://api.github.com/orgs/' + org + '/repos')
-}
+  process.removeListener('uncaughtException', onError)
 
-function* getPackageName(org, repo) {
-  var json
-  try {
-    json = yield get('https://raw.github.com/' + org + '/' + repo + '/master/package.json')
-  } catch (err) {}
-  // no package.json
-  if (!json)
-    return console.log('"' + repo + '" has no package.json')
-  if (json.private)
-    return console.log('"' + repo + '" is private')
-  return json.name
-}
-
-function* addOwner(name, me, user) {
-  var owners
-  try {
-    owners = yield exec('npm', ['owner', 'ls', name])
-  } catch (err) {
-    console.log('repo "' + name + '" isnt published on npm')
-    return
+  function onError() {
+    Object.keys(state).forEach(function (repo) {
+      state[repo] = Date.now() - state[repo]
+    })
+    console.log(JSON.stringify(state, null, 2))
+    setImmediate(function () {
+      process.exit()
+    })
   }
-  // you don't have rights!
-  if (!~owners.indexOf(me))
-    return console.log('you dont have publishing rights to "' + name + '"')
-  // this particular individual already has rights!
-  if (~owners.indexOf(user))
-    return console.log(user + ' already has the rights to "' + name + '"')
-  try {
-    yield exec('npm', ['owner', 'add', user, name])
-    console.log(user + ' added as owner to "' + name + '"')
-  } catch (err) {
-    console.error(err)
-    // who knows why this would happen
+
+  function* add(data) {
+    if (!data.size) return
+    var master = data.default_branch
+    if (!master) return
+    var repo = data.name
+    state[repo] = Date.now()
+    var res
+    try {
+      res = yield* request('https://raw.githubusercontent.com/' + org + '/' + repo + '/' + master + '/package.json', true)
+    } catch (err) {
+      return // ignore timeouts and shit
+    }
+    delete state[repo]
+    if (res.statusCode !== 200) {
+      res.resume()
+      return
+    }
+    var json = res.body
+    if (json.private) return
+    var name = json.name
+    if (!name) return
+
+    var owners
+    try {
+      owners = yield exec('npm', ['owner', 'ls', name])
+    } catch (err) {
+      console.log('repo "' + name + '" isnt published on npm')
+      return
+    }
+    // you don't have rights!
+    if (!~owners.indexOf(me))
+      return console.log('you dont have publishing rights to "' + name + '"')
+    // this particular individual already has rights!
+    if (~owners.indexOf(user))
+      return console.log(user + ' already has the rights to "' + name + '"')
+    try {
+      yield exec('npm', ['owner', 'add', user, name])
+      console.log(user + ' added as owner to "' + name + '"')
+    } catch (err) {
+      console.error(err)
+      // who knows why this would happen
+    }
   }
 }
 
