@@ -18,11 +18,11 @@
     "url": "https://github.com/jonathanong/npm-org-rights/issues"
   },
   "dependencies": {
-    "co": "^3.0.5",
+    "co": "^4.6.0",
     "chanel": "^2.0.2",
-    "cogent": "~0.3.14",
+    "cogent": "~1.0.1",
     "commander": "^2.1.0",
-    "parse-link-header": "~0.1.0",
+    "parse-link-header": "~0.4.1",
     "yield-ratelimit-reset": "^1.0.0"
   },
   "engines": {
