@@ -11,11 +11,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jonathanong/npm-org-rights.git"
+    "url": "https://github.com/repo-utils/npm-org-rights.git"
   },
   "bugs": {
     "mail": "me@jongleberry.com",
-    "url": "https://github.com/jonathanong/npm-org-rights/issues"
+    "url": "https://github.com/repo-utils/npm-org-rights/issues"
   },
   "dependencies": {
     "co": "^3.0.5",
@@ -26,7 +26,7 @@
     "yield-ratelimit-reset": "^1.0.0"
   },
   "engines": {
-    "node": ">= 0.11.12"
+    "node": ">= 4.0.0"
   },
   "bin": {
     "npm-org-rights": "./bin/npm-org-rights"
